@@ -52,6 +52,34 @@ class Mysql_service2(object):
         except:
             self.db.rollback()
 
+    ##########获得小于60用户信誉值"""
+    def search_for_credity_byusername(self):
+
+        data_result = []
+        data_total = 0
+        # 存放结果的字典数组与数量
+        cursor = self.db.cursor(cursor=pymysql.cursors.DictCursor)
+
+        sql = '''select * from all_users where credit<60 order by credit desc'''
+
+        try:
+            # 执行sql语句
+            cursor.execute(sql)
+            data = cursor.fetchall()
+
+            # cursor.rowcount
+            # 提交到数据库执行
+
+            for row in data:
+                data_result.append(row)
+                data_total = data_total + 1
+                # self.db.commit()
+        except:
+            # 如果发生错误则回滚
+            self.db.rollback()
+
+        return data_total, data_result
+########查某一个用户的信誉值
     def search_for_credity_byusername(self, username):
 
         data_result = []
