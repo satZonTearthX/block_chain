@@ -1,10 +1,11 @@
 #!/usr/bin/python3
-
+import copy
 import pymysql
 from blockchain.config import *
 
+
 class Mysql_service2(object):
-    db = pymysql.connect(host=DB_HOST, user=DB_ID, password=DB_PASSWORD, db=DB_DTTABASE)
+    db = pymysql.connect(host=DB_HOST, user=DB_ID, password=DB_PASSWORD, db=DB_DATABASE)
     cursor = db.cursor()
     def __init__(self):
         print("connection on")
@@ -108,9 +109,7 @@ class Mysql_service2(object):
         return data_total,data_result
 
 
-    def close_db(self):
-        self.db.close()
-# 关闭数据库连接
+
 
     def check(self,user):
 
@@ -211,6 +210,34 @@ class Mysql_service2(object):
             self.db.rollback()
 
         return data_total,data_result
+
+
+    def get_block_tem(self):
+        ####查所有的临时交易
+        data_result = []
+        data_total = 0
+        # 存放结果的字典数组与数量
+        cursor = self.db.cursor(cursor=pymysql.cursors.DictCursor)
+
+        sql = '''select * from block_tem '''
+        try:
+            # 执行sql语句
+            cursor.execute(sql)
+            data = cursor.fetchall()
+
+            # cursor.rowcount
+            # 提交到数据库执行
+
+            for row in data:
+                data_result.append(row)
+                data_total = data_total + 1
+                # self.db.commit()
+        except:
+            # 如果发生错误则回滚
+            self.db.rollback()
+
+        return data_total, data_result
+
 
     def search_for_commodity_byseller(self,seller_name):
 ####查商家的所有商品
@@ -339,9 +366,23 @@ class Mysql_service2(object):
 
 
     #在临时区块增加交易记录
-    def add_sale_to_tem_block(self,sales_id,seller_name,buyer_name,amount,goods_name,sales_time,arrive_time,sales_type,sales_condition):
+    def add_sale_to_tem_block(self,sales_id,seller_name,buyer_name,amount,goods_name,sales_time,arrive_time,sales_type,sales_condition,seller_host,seller_port,price):
+
         cursor = self.db.cursor(cursor=pymysql.cursors.DictCursor)
-        sql_block_insert='''insert into blocktem( '''
+        sql_block_insert='''insert into block_tem(sales_id,seller_name,buyer_name,amount,goods_name,\
+        sales_time,arrive_time,sales_type,sales_condition,seller_host,seller_port,price)  \
+        values(%d,"%s","%s",%f,"%s",%lf,%lf,%d,%d,"%s",%d,%lf)'''% (sales_id,seller_name,buyer_name,amount,goods_name,sales_time,arrive_time,sales_type,sales_condition,seller_host,seller_port,price)
+
+        try:
+            # 执行sql语句
+            cursor.execute(sql_block_insert)
+            print(cursor.rowcount)
+            # 提交到数据库执行
+            self.db.commit()
+        except:
+            # 如果发生错误则回滚
+            print("insert failed")
+            self.db.rollback()
 
 
 
@@ -384,14 +425,23 @@ class Mysql_service2(object):
             print("insert failed")
             self.db.rollback()
 
-    #def add_block(self):
+            # 增加区块
+
+    def add_block(self, index, previous_hash, timestamp, transaction, nonce):
+        cursor = self.db.cursor(cursor=pymysql.cursors.DictCursor)
+        sql_check_num = '''select * from block_header'''
+        cursor.execute(sql_check_num)
+        num = cursor.rowcount
+        sql_add_header = '''insert into block_header(index,previous_hash,timestamp,transaction,nonce)\
+                        values('''
+        sql_add_block = '''alter table test rename test1;'''
 
     #增加商品
     def insert_commodity(self, goods_id,goods_name, goods_amount, goods_seller, goods_stripeID, goods_price, seller_host, seller_port):
         cursor = self.db.cursor()
         price_ava=goods_price / goods_amount
         sql = '''insert into all_goods(goods_id,goods_name,goods_amount,goods_seller,goods_stripeID,goods_price,goods_stat,price_ava
-        ,seller_host,seller_port)  values(%d,"%s",%d,"%s","%s","%f","for sale",%f,"%s",%d) ''' \
+        ,seller_host,seller_port)  values(%d,"%s",%d,"%s","%s",%f,"for sale",%f,"%s",%d) ''' \
               % (goods_id,goods_name, goods_amount, goods_seller, goods_stripeID, goods_price,  price_ava
                  ,seller_host, seller_port)
 
@@ -406,4 +456,6 @@ class Mysql_service2(object):
             print("insert failed")
             self.db.rollback()
 
-\
+    def close_db(self):
+        self.db.close()
+# 关闭数据库连接
