@@ -52,6 +52,65 @@ class Mysql_service(object):
         except:
             self.db.rollback()
 
+
+
+
+
+
+
+
+
+    def check(self,user):
+
+        check_sql = "select * from all_users where user_name='%s'" % self.user
+        cur=self.db.cursor()
+        cur.execute(check_sql)
+        if cur.rowcount==0:
+            return True
+        else:
+            return False
+
+
+
+
+
+
+###############################删
+    #######删除某一商品"""
+
+    def del_good(self, good_id: int):
+        cursor = self.db.cursor(cursor=pymysql.cursors.DictCursor)
+
+        sql = '''DELETE FROM all_goods WHERE login_name="%d" ''' % good_id
+
+        try:
+            # 执行sql语句
+            cursor.execute(sql)
+            self.db.commit()
+        except:
+            # 如果发生错误则回滚
+            self.db.rollback()
+
+    ########删除某一用户"""
+
+    def del_users(self, login_name: str):
+        cursor = self.db.cursor(cursor=pymysql.cursors.DictCursor)
+
+        sql = '''DELETE FROM all_users WHERE login_name="%s" ''' % login_name
+
+        try:
+            # 执行sql语句
+            cursor.execute(sql)
+            self.db.commit()
+        except:
+            # 如果发生错误则回滚
+            self.db.rollback()
+
+
+###############################查
+
+#############################################
+
     ##########获得小于60用户信誉值"""
     def search_for_credity_byusername(self):
 
@@ -79,7 +138,10 @@ class Mysql_service(object):
             self.db.rollback()
 
         return data_total, data_result
-########查某一个用户的信誉值
+
+
+
+    ########查某一个用户的信誉值
     def search_for_credity_byusername(self, username):
 
         data_result = []
@@ -101,14 +163,14 @@ class Mysql_service(object):
             for row in data:
                 data_result.append(row)
                 data_total = data_total + 1
-            # self.db.commit()
+                # self.db.commit()
         except:
             # 如果发生错误则回滚
             self.db.rollback()
 
         return data_total, data_result
 
-
+    #######按名称查找某一商品
     def search_for_commodity_bygoods(self,goods_name):
 
         data_result=[]
@@ -138,20 +200,6 @@ class Mysql_service(object):
 
 
 
-
-    def check(self,user):
-
-        check_sql = "select * from all_users where user_name='%s'" % self.user
-        cur=self.db.cursor()
-        cur.execute(check_sql)
-        if cur.rowcount==0:
-            return True
-        else:
-            return False
-
-###############################查
-
-#############################################
     ####按物流价格/时间排序  获取物流公司的信息
     ###return 记录数量 价格顺序推荐 时间顺序推荐
     def search_for_logistics(self, distance):
@@ -607,6 +655,42 @@ class Mysql_service(object):
                 self.db.rollback()
 
         return record_buyer, record_seller
+
+    ###########找到某一条特定记录"""
+
+    def search_record(self, time, sales_id):
+        cursor = self.db.cursor(cursor=pymysql.cursors.DictCursor)
+        sql = '''select timestamp from block_header'''
+        try:
+            # 执行sql语句
+            cursor.execute(sql)
+            data = cursor.fetchall()
+            # cursor.rowcount
+            # 提交到数据库执行
+        except:
+            # 如果发生错误则回滚
+            self.db.rollback()
+
+        max = 0
+        for row in data:
+            if row['timestamp'] > time:
+                break
+            max += 1
+
+        # 找到对应的区块体
+        block_body = "block_body" + '%d' % max
+        sql = '''select * from %s where sales_id = %d ''' % (block_body, sales_id)
+        cursor = self.db.cursor(cursor=pymysql.cursors.DictCursor)
+        try:
+            self.db.commit()
+            cursor.execute(sql)
+            data = cursor.fetchall()
+        except:
+            # 如果发生错误则回滚
+            self.db.rollback()
+
+        return data
+
 
     def close_db(self):
         self.db.close()
