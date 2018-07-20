@@ -561,6 +561,53 @@ class Mysql_service(object):
 
         return data
 
+    ##########找到某一用户所有订单"""
+
+    def search_all_record(self, user_name: str):
+        record_seller = []
+        record_buyer = []
+        cursor = self.db.cursor(cursor=pymysql.cursors.DictCursor)
+        sql = '''select * from block_header'''
+        try:
+            # 执行sql语句
+            cursor.execute(sql)
+            # cursor.rowcount
+            # 提交到数据库执行
+        except:
+            # 如果发生错误则回滚
+            self.db.rollback()
+        len = cursor.rowcount
+        for i in range(len - 1):
+            i += 1
+            # 找到区块体
+            block_body = "block_body" + '%d' % i
+            # 买家
+            sql = '''select * from %s where buyer_name = '%s' ''' % (block_body, user_name)
+            cursor = self.db.cursor(cursor=pymysql.cursors.DictCursor)
+            try:
+                self.db.commit()
+                cursor.execute(sql)
+                data = cursor.fetchall()
+                if data != ():
+                    record_seller.append(data)
+            except:
+                # 如果发生错误则回滚
+                self.db.rollback()
+            # 卖家情况
+            sql = '''select * from %s where seller_name = '%s' ''' % (block_body, user_name)
+            cursor = self.db.cursor(cursor=pymysql.cursors.DictCursor)
+            try:
+                self.db.commit()
+                cursor.execute(sql)
+                data = cursor.fetchall()
+                if data != ():
+                    record_buyer.append(data)
+            except:
+                # 如果发生错误则回滚
+                self.db.rollback()
+
+        return record_buyer, record_seller
+
     def close_db(self):
         self.db.close()
 # 关闭数据库连接
