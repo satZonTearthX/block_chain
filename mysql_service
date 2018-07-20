@@ -189,11 +189,33 @@ class Mysql_service(object):
         sorted(data_result_timeorder, key=lambda price_order: price_order["total_time"])
         return data_total, data_result_priceorder,data_result_timeorder
 
-    ##########获得指定用户地址"""
+    ########获得节点中的所有IP"""
 
-    def get_ip(self, user_name: str):
+    def get_all_ip(self):
+        address = []
         cursor = self.db.cursor(cursor=pymysql.cursors.DictCursor)
-        sql = '''select user_host,user_port from all_users where user_name = "%s" ''' % user_name
+        sql = '''select user_host,user_port from all_users'''
+        try:
+            # 执行sql语句
+            cursor.execute(sql)
+            data = cursor.fetchall()
+            # cursor.rowcount
+            # 提交到数据库执行
+        except:
+            # 如果发生错误则回滚
+            self.db.rollback()
+
+        for record in data:
+            string = record['user_host'] + ":" + "%s" % record['user_port']
+            address.append(string)
+
+        return address
+
+    ######获得指定用户地址"""
+
+    def get_ip(self, login_name: str):
+        cursor = self.db.cursor(cursor=pymysql.cursors.DictCursor)
+        sql = '''select user_host,user_port from all_users where login_name = "%s" ''' % login_name
         try:
             # 执行sql语句
             cursor.execute(sql)
