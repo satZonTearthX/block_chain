@@ -4,7 +4,7 @@ import pymysql
 from blockchain.config import *
 
 
-class Mysql_service2(object):
+class Mysql_service(object):
     db = pymysql.connect(host=DB_HOST, user=DB_ID, password=DB_PASSWORD, db=DB_DATABASE)
     cursor = db.cursor()
     def __init__(self):
@@ -483,6 +483,61 @@ class Mysql_service2(object):
             # 如果发生错误则回滚
             print("insert failed")
             self.db.rollback()
+
+####################区块链
+
+    ########获取区块链长度"""
+
+    def get_length(self):
+        cursor = self.db.cursor(cursor=pymysql.cursors.DictCursor)
+        sql = '''select * from block_header'''
+        try:
+            # 执行sql语句
+            cursor.execute(sql)
+            # cursor.rowcount
+            # 提交到数据库执行
+        except:
+            # 如果发生错误则回滚
+            self.db.rollback()
+        return cursor.rowcount
+
+    ########返回指定区块头的内容"""
+
+    def get_block_header(self, index: int):
+        cursor = self.db.cursor(cursor=pymysql.cursors.DictCursor)
+        sql = '''SELECT * from block_header limit %d,1''' % index
+
+        try:
+            # 执行sql语句
+            cursor.execute(sql)
+            data = cursor.fetchall()
+            # cursor.rowcount
+            # 提交到数据库执行
+        except:
+            # 如果发生错误则回滚
+            self.db.rollback()
+
+        return data
+
+    #########返回指定区块体的内容"""
+
+    def get_block_body(self, index: int):
+        cursor = self.db.cursor(cursor=pymysql.cursors.DictCursor)
+        block_body = "block_body" + '%d' % index
+        sql = '''select * from %s''' % block_body
+
+        try:
+            # 执行sql语句
+            cursor.execute(sql)
+            data = cursor.fetchall()
+            # cursor.rowcount
+            # 提交到数据库执行
+        except:
+
+            # 如果发生错误则回滚
+            self.db.rollback()
+
+        return data
 
     def close_db(self):
         self.db.close()
